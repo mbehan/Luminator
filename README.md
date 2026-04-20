@@ -34,16 +34,30 @@ dependencies: [
 ## Quick Start
 
 ```swift
-backgroundImageView.ambientLightLevel = 0.2
-view.addSubview(backgroundImageView)
-view.addSubview(lightView)
+import UIKit
+import Luminator
 
-lightingController.addLitView(backgroundImageView)
-lightingController.addLightFixture(lightView)
-lightingController.setNeedsLightingUpdate()
+class ViewController: UIViewController {
+    
+    let lightingController = LightingController()
 
-lightView.onPositionChanged = { [weak self] _ in
-    self?.lightingController.setNeedsLightingUpdate()
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do any additional setup after loading the view.
+        
+        let bg = UIImageView(image: UIImage(named: "background"))
+        bg.ambientLightLevel = 0.25
+        view.addSubview(bg)
+        lightingController.addLitView(bg)
+        
+        let light = LightView(intensity: 1.0,
+                              range: 150.0,
+                              tintColor: .white,
+                              frame: CGRect(x: 100, y: 100, width: 20, height: 20))
+        view.addSubview(light)
+        lightingController.addLightFixture(light)
+        lightingController.setNeedsLightingUpdate()
+    }
 }
 ```
 
@@ -113,3 +127,4 @@ struct CustomLight: LightFixture {
 - Rendering is based on Core Image filters including `CIRadialGradient`, `CIAdditionCompositing`, and `CISourceInCompositing`
 - `UIImageView` animation frames are supported
 - For static scenes, prefer explicit invalidation with `setNeedsLightingUpdate()` instead of continuous updates
+- Experimental `UIView` support is available via `UIViewLightingAdapter` and provides the same interface as `UIImageView`
