@@ -1,110 +1,115 @@
-image-view-lighting
-===================
+# Luminator
 
-With the kind of apps I usually make, I often end up doing a lot of gamey looking things right inside of UIKit. The addition of UIDynamics made one of those jobs, gravity, super easy. I wanted the same kind of simplicity for lights.
+`Luminator` composites dynamic light sources over `UIImageView` content, including animations, using Core Image.
 
-![Animated figure being dynamically lit by 3 moving coloured lights](https://iosapp.dev/static/img/core-image-lighting.gif)
+## Requirements
 
-## Usage
+- iOS 13+
+- Swift 6
 
-Create a lighting controller, add some light fixtures and image views you want to be lit to the controller, and let it know when you need to update the lighting (when we're moving the lights in the example above). Here's the interface for the `MBLightingController`:
+## Installation
 
-```objective-c
-@interface MBLightingController : NSObject
+Add `Luminator` as a Swift Package dependency in Xcode:
 
-@property(nonatomic) BOOL lightsConstantlyUpdating;
-
--(void)addLightFixture:(id<MBLightFixture>)light;
--(void)addLitView:(MBLitAnimationView *)litView;
--(void)setNeedsLightingUpdate;
-
-@end
+```text
+https://github.com/mbehan/Luminator.git
 ```
 
-Only set `lightsConstantlyUpdating` if the lighting is always changing.
+Or declare it in `Package.swift`:
 
-Anything can be a light, so long as it implements the `MBLightFixture` protocol, which means it needs a position, intensity, range and color. I've just been using a UIView subclass but maybe your light will be a `CAEmitterLayer` or something.
+```swift
+dependencies: [
+    .package(url: "https://github.com/mbehan/Luminator.git", from: "<version>")
+]
+```
 
-`MBLitAnimationView` can be used everywhere you'd use a UIImageView, it just adds the ability to be lit, and [makes working with animation easier](https://iosapp.dev/2014/03/02/uiimageview-animation-performance.html).
+And add the product to your target:
 
-Your view controller's viewDidLoad might include something like this:
+```swift
+dependencies: [
+    .product(name: "Luminator", package: "Luminator")
+]
+```
 
-```objective-c
-//create the ligthing controller
-self.lightingController = [[MBLightingController alloc] init];
-    
-//add an image to be lit
-MBLitAnimationView *bg = [[MBLitAnimationView alloc] initWithFrame:self.view.bounds];
-bg.ambientLightLevel = 0.1; // very dark
-[bg setImage:[UIImage imageNamed:@"wall"]];
-[self.view addSubview:bg];
-[_lightingController addLitView:bg];
-    
-//add a light
-SimpleLightView *lightView = [[SimpleLightView alloc] initWithFrame:CGRectMake(200, 200, 25, 25)];
-lightView.intensity = @0.8;
-lightView.tintColor = [UIColor whiteColor];
-lightView.range = @250.0;
-    
-[self.view addSubview:lightView];
-[_lightingController addLightFixture:lightView];
+## Quick Start
+
+```swift
+backgroundImageView.ambientLightLevel = 0.2
+view.addSubview(backgroundImageView)
+view.addSubview(lightView)
+
+lightingController.addLitView(backgroundImageView)
+lightingController.addLightFixture(lightView)
+lightingController.setNeedsLightingUpdate()
+
+lightView.onPositionChanged = { [weak self] _ in
+    self?.lightingController.setNeedsLightingUpdate()
+}
 ```
 
 ## How It Works
 
-The light effect is achieved using CoreImage filters and everything happens in the `applyLights` method of `MBLitAnimationView`.
+1. Register one or more light sources with `LightingController`.
+2. Register any `UIImageView` you want rendered with lighting effects.
+3. Call `setNeedsLightingUpdate()` when light positions or properties change.
+4. Enable `lightsConstantlyUpdating` when lighting should be recomputed continuously.
 
-I experimented with a bunch of [different filters](https://developer.apple.com/library/ios/documentation/graphicsimaging/reference/CoreImageFilterReference/Reference/reference.html) trying to get the right effect, and there were several that worked so just try switching out the filters if you want something a little different.
+`Luminator` ships with `LightView`, a draggable `UIView` that already conforms to `LightFixture`, but any type that provides a position, intensity, range and tint color can be used as a light source.
 
-Multiple filters are chained together, first up we need to darken the image using `CIColorControls`:
+## Main Types
 
-```objective-c
-CIFilter *darkenFilter = [CIFilter filterWithName:@"CIColorControls"
-                                           keysAndValues:
-                                 @"inputImage", currentFrameStartImage,
-                                 @"inputSaturation", @1.0,
-                                 @"inputContrast", @1.0,
-                                 @"inputBrightness", @(0-(1-_ambientLightLevel)), nil];
+### `LightingController`
+
+Coordinates light fixtures and lit views.
+
+```swift
+let lightingController = LightingController()
+lightingController.lightsConstantlyUpdating = false
+lightingController.addLightFixture(light)
+lightingController.addLitView(imageView)
+lightingController.setNeedsLightingUpdate()
 ```
 
-Then, for every light that we have, we create a `CIRadialGradient`:
+### `LightView`
 
-```objective-c
-CIFilter *gradientFilter = [CIFilter filterWithName:@"CIRadialGradient"
-                                              keysAndValues:
-                                    @"inputRadius0", [light constantIntensityOverRange] ? [light range] : @0.0,
-                                    @"inputRadius1", [light range],
-                                    @"inputCenter", [CIVector vectorWithCGPoint:inputPoint0],
-                                    @"inputColor0", color0,
-                                    @"inputColor1", color1, nil];
+A ready-to-use `UIView` light source with:
+
+- `intensity`
+- `range`
+- `tintColor`
+- `constantIntensityOverRange`
+- `isDraggable`
+- `onPositionChanged`
+
+### `ambientLightLevel`
+
+`UIImageView` exposes an `ambientLightLevel` convenience property:
+
+```swift
+imageView.ambientLightLevel = 0.25
 ```
 
-Then we composite the gradients with the darkened image using `CIAdditionCompositing`:
+Use lower values for darker scenes and higher values to preserve more of the original image.
 
-```objective-c
-lightFilter = [CIFilter filterWithName:@"CIAdditionCompositing"
-                                     keysAndValues:
-                           @"inputImage", gradients[i],
-                           @"inputBackgroundImage",[lightFilter outputImage],nil];
+## Using Custom Lights
+
+Any type conforming to `LightFixture` can act as a light:
+
+```swift
+import UIKit
+import Luminator
+
+struct CustomLight: LightFixture {
+    var position: CGPoint
+    var intensity: NSNumber
+    var range: NSNumber
+    var tintColor: UIColor?
+    var constantIntensityOverRange: Bool
+}
 ```
 
-Finally, we mask the image to the shape of the original image:
+## Notes
 
-```objective-c
-CIFilter *maskFilter = [CIFilter filterWithName:@"CISourceInCompositing"
-                                      keysAndValues:
-                            @"inputImage", [lightFilter outputImage],
-                            @"inputBackgroundImage",currentFrameStartImage,nil];
-```
-
-Just  set the image view's image property to a UIImage created from the final filter's output and we're done!
-
-```objective-c
-CGImageRef cgimg = [coreImageContext createCGImage:[maskFilter outputImage]
-                                                  fromRect:[currentFrameStartImage extent]];
-        
-UIImage *newImage = [UIImage imageWithCGImage:cgimg];
-imageView.image = newImage;
-        
-CGImageRelease(cgimg);
-```
+- Rendering is based on Core Image filters including `CIRadialGradient`, `CIAdditionCompositing`, and `CISourceInCompositing`
+- `UIImageView` animation frames are supported
+- For static scenes, prefer explicit invalidation with `setNeedsLightingUpdate()` instead of continuous updates
