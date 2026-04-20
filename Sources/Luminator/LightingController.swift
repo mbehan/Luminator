@@ -46,7 +46,7 @@ public class LightingController: NSObject {
     /// Registers a view to receive lighting updates.
     ///
     /// - Parameter litView: A view that should be rendered with lighting effects.
-    public func addStandardLitView(_ litView: UIView) {
+    public func addLitView(_ litView: UIView) {
         let adapter = litView.lightingAdapter
         adapter.setLightingContext(coreImageContext)
         litRenderables.append(adapter)
