@@ -128,3 +128,4 @@ struct CustomLight: LightFixture {
 - `UIImageView` animation frames are supported
 - For static scenes, prefer explicit invalidation with `setNeedsLightingUpdate()` instead of continuous updates
 - Experimental `UIView` support is available via `UIViewLightingAdapter` and provides the same interface as `UIImageView`
+- The original approach, which provides custom classes rather than extending UIImageView, and is written in Objective-C, is retained on the `objc` branch
