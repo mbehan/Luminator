@@ -2,6 +2,8 @@
 
 `Luminator` composites dynamic light sources over `UIImageView` content, including animations, using Core Image.
 
+<img width="452" height="592" alt="luminator-demo" src="https://github.com/user-attachments/assets/c54c6abc-3876-4adf-8a41-b6db668a34ab" />
+
 ## Requirements
 
 - iOS 13+
