@@ -1,6 +1,9 @@
-# Luminator
+<p align="center"><img width="443" height="362" alt="luminator2000" src="https://github.com/user-attachments/assets/2ce711b9-43ad-4fc2-a108-0f126cde266c" /></p>
 
-`Luminator` is a Swift package that composites dynamic light sources over `UIImageView` content, including animations, using Core Image.
+
+Luminator is a Swift package that composites dynamic light sources over `UIImageView` content, including animations, using Core Image.
+
+## Demo
 
 <img width="452" height="592" alt="luminator-demo" src="https://github.com/user-attachments/assets/c54c6abc-3876-4adf-8a41-b6db668a34ab" />
 
